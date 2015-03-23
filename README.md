@@ -1,2 +1,0 @@
-# usercode
-Analyzer setup
