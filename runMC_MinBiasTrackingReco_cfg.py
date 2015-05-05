@@ -38,7 +38,7 @@ process.source = cms.Source("PoolSource",
 )
 
 process.TFileService = cms.Service("TFileService",
-                                  fileName=cms.string('analysisTree_v3.root')
+                                  fileName=cms.string('analysisTree_v4.root')
 )
 
 ###############################################################################
@@ -89,10 +89,12 @@ process.toweranalyzer = cms.EDAnalyzer('TowerAnalyzer',
 
 process.generaltrackana = cms.EDAnalyzer('TrackAnalyzer',
 				     tracks = cms.InputTag("generalTracks"),
+				     vertices = cms.InputTag("offlinePrimaryVertices"),
 )
 
 process.minbiastrackana = cms.EDAnalyzer('TrackAnalyzer',
 				     tracks = cms.InputTag("allTracks"),
+				     vertices = cms.InputTag("allVertices"),
 )
 
 process.pixelhitanalyzer = cms.EDAnalyzer('PixelHitAnalyzer',

@@ -33,6 +33,8 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "TTree.h"
 
@@ -59,15 +61,22 @@ class TrackAnalyzer : public edm::EDAnalyzer {
       // ----------member data ---------------------------
 
       edm::InputTag tracks_;
+      edm::InputTag vertices_;
 
       TTree* Events;
 
       int evt, run, lumi;
 
-      int mult;
+      int trkmult;
       float pt[Max];
       float eta[Max];
       float phi[Max];
+
+      int vtxmult;
+      float vx[Max];
+      float vy[Max];
+      float vz[Max];
+
 };
 
 //
@@ -86,6 +95,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
 {
    //now do what ever initialization is needed
    tracks_ = iConfig.getParameter<edm::InputTag> ("tracks");
+   vertices_ = iConfig.getParameter<edm::InputTag> ("vertices");
 }
 
 
@@ -108,7 +118,7 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
-   mult = 0;
+   trkmult = 0;
 
    evt = iEvent.id().event();
    run = iEvent.id().run();
@@ -117,15 +127,31 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    edm::Handle<vector<reco::Track>> trks;
    iEvent.getByLabel(tracks_,trks);
 
-   for(unsigned int i=0; i<trks->size(); i++){
+   for(unsigned int i=0; i<trks->size(); i++) {
 
      const reco::Track& p = (*trks)[i];
 
-     pt[mult] = p.pt();
-     eta[mult] = p.eta();
-     phi[mult] = p.phi();
+     pt[trkmult] = p.pt();
+     eta[trkmult] = p.eta();
+     phi[trkmult] = p.phi();
 
-     mult++;
+     trkmult++;
+
+   }
+
+   vtxmult = 0;
+
+   edm::Handle<reco::VertexCollection> recVertexCollection;
+   iEvent.getByLabel(vertices_,recVertexCollection);
+   const reco::VertexCollection * recVertices = recVertexCollection.product();
+
+   for(reco::VertexCollection::const_iterator vertex = recVertices->begin(); vertex!= recVertices->end(); vertex++) {
+
+     vx[vtxmult] = vertex->position().x();
+     vy[vtxmult] = vertex->position().y();
+     vz[vtxmult] = vertex->position().z();
+
+     vtxmult++;
 
    }
 
@@ -145,10 +171,15 @@ TrackAnalyzer::beginJob()
    Events->Branch("run",&run,"run/I");
    Events->Branch("lumi",&lumi,"lumi/I");
 
-   Events->Branch("mult",&mult,"mult/I");
-   Events->Branch("pt",pt,"pt[mult]/F");
-   Events->Branch("eta",eta,"eta[mult]/F");
-   Events->Branch("phi",phi,"phi[mult]/F");
+   Events->Branch("trkmult",&trkmult,"trkmult/I");
+   Events->Branch("pt",pt,"pt[trkmult]/F");
+   Events->Branch("eta",eta,"eta[trkmult]/F");
+   Events->Branch("phi",phi,"phi[trkmult]/F");
+
+   Events->Branch("vtxmult",&vtxmult,"vtxmult/I");
+   Events->Branch("vx",vx,"vx[vtxmult]/F");
+   Events->Branch("vy",vy,"vy[vtxmult]/F");
+   Events->Branch("vz",vz,"vz[vtxmult]/F");
 
 }
 

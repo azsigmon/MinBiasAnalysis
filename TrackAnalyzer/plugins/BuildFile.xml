@@ -4,4 +4,5 @@
 <use name="FWCore/ServiceRegistry"/>
 <use name="CommonTools/UtilAlgos"/>
 <use name="DataFormats/TrackReco"/>
+<use name="DataFormats/VertexReco"/>
 <flags EDM_PLUGIN="1"/>
