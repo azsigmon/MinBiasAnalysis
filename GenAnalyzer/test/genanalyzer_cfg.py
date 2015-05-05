@@ -12,12 +12,12 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        'file:../../step3_RAW2DIGI_L1Reco_RECO.root'
+        'file:/afs/cern.ch/user/a/azsigmon/workspace/dNdeta/step3_RAW2DIGI_L1Reco_RECO.root'
     )
 )
 
 process.TFileService = cms.Service("TFileService",
-                                  fileName=cms.string('Pythia8_GenTree_v2.root'))
+                                  fileName=cms.string('test.root'))
 
 process.genanalyzer = cms.EDAnalyzer('GenAnalyzer',
 				     genparticles = cms.InputTag("genParticles"),

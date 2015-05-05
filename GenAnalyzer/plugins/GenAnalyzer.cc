@@ -19,6 +19,7 @@
 
 // system include files
 #include <memory>
+#include <vector>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -33,10 +34,12 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
 #include "TTree.h"
+#include "TLorentzVector.h"
 
 using namespace std;
 
@@ -53,11 +56,12 @@ class GenAnalyzer : public edm::EDAnalyzer {
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-
    private:
       virtual void beginJob() override;
       virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
       virtual void endJob() override;
+
+      static bool pairCompare(pair<double,HepMC::FourVector> i, pair<double,HepMC::FourVector> j);
 
       // ----------member data ---------------------------
 
@@ -68,6 +72,7 @@ class GenAnalyzer : public edm::EDAnalyzer {
       int evt, run, lumi;
       int nvtx;
       int processID;
+      double xi;
 
       int mult;
 
@@ -120,6 +125,12 @@ GenAnalyzer::~GenAnalyzer()
 // member functions
 //
 
+bool
+GenAnalyzer::pairCompare(pair<double,HepMC::FourVector> i, pair<double,HepMC::FourVector> j)
+{
+  return (i.first < j.first);
+}
+
 // ------------ method called for each event  ------------
 void
 GenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
@@ -144,6 +155,7 @@ GenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    iEvent.getByLabel("generator", genevent);
    processID =  genevent->signalProcessID();
 
+//********
    edm::Handle<reco::GenParticleCollection> parts;
    iEvent.getByLabel(genparts_,parts);
    mult = 0;
@@ -170,6 +182,53 @@ GenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    }
 
+   edm::Handle<edm::HepMCProduct> hepEv;
+   iEvent.getByLabel("generator", hepEv);
+
+   xi = -1;
+
+   vector<pair<double,HepMC::FourVector> > particles;
+   for(HepMC::GenEvent::particle_const_iterator p = hepEv->GetEvent()->particles_begin(); p!= hepEv->GetEvent()->particles_end(); p++) {
+     if((*p)->status() == 1) {
+       double e  = (*p)->momentum().e();
+       double pz = (*p)->momentum().pz();
+       double y = 1./2*log((e+pz)/(e-pz));
+       particles.push_back(pair<double,HepMC::FourVector> (y, (*p)->momentum()) );
+     }
+   }
+
+   sort(particles.begin(), particles.end(), pairCompare);
+
+   double detamax = 0.;
+   vector<pair<double,HepMC::FourVector> >::const_iterator plast;
+   for(vector<pair<double,HepMC::FourVector> >::const_iterator p = particles.begin(); p!= particles.end() - 1; p++) {
+     double deta = (p+1)->first - p->first;
+     if(deta > detamax) { detamax = deta; plast = p; }
+   }
+
+   HepMC::FourVector sum_low, sum_hig;
+   for(vector<pair<double,HepMC::FourVector> >::iterator p = particles.begin(); p!= particles.end(); p++) {
+     if(p <= plast) {
+        sum_low.setPx(sum_low.px() + p->second.px());
+        sum_low.setPy(sum_low.py() + p->second.py());
+        sum_low.setPz(sum_low.pz() + p->second.pz());
+        sum_low.setE (sum_low.e()  + p->second.e() );
+     }
+     else {
+        sum_hig.setPx(sum_hig.px() + p->second.px());
+        sum_hig.setPy(sum_hig.py() + p->second.py());
+        sum_hig.setPz(sum_hig.pz() + p->second.pz());
+        sum_hig.setE (sum_hig.e()  + p->second.e() );
+     }
+   }
+
+   double m_low = sum_low.m();
+   double m_hig = sum_hig.m();
+
+   double Mx = (m_low > m_hig ? m_low : m_hig);
+
+   xi = Mx*Mx / (13e+3*13e+3); // 13 TeV
+
    Events->Fill();
 
 }
@@ -188,6 +247,7 @@ GenAnalyzer::beginJob()
 
    Events->Branch("nvtx",&nvtx,"nvtx/I");
    Events->Branch("processID",&processID,"processID/I");
+   Events->Branch("xi",&xi,"xi/D");
    Events->Branch("mult",&mult,"mult/I");
 
    Events->Branch("energy",energy,"energy[mult]/F");
