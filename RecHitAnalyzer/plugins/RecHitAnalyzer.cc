@@ -63,11 +63,12 @@ class RecHitAnalyzer : public edm::EDAnalyzer {
       int evt, run, lumi;
 
       int mult;
+      float energy[Max];
+      float time[Max];
       int ieta[Max];
       int iphi[Max];
-      float eta[Max];
-      float phi[Max];
-      float energy[Max];
+      //float eta[Max];
+      //float phi[Max];
 };
 
 //
@@ -121,11 +122,12 @@ RecHitAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         const HFRecHit& hit = (*coll)[i];
         
+        energy[i] = hit.energy();
+        time[i] = hit.time();
         ieta[i] = hit.id().ieta();
         iphi[i] = hit.id().iphi();
       //  eta[i] = hit.eta();
       //  phi[i] = hit.phi();
-        energy[i] = hit.energy();
         mult++;
     }
 
@@ -154,11 +156,13 @@ RecHitAnalyzer::beginJob()
 
     Events->Branch("mult",&mult,"mult/I");
 
+    Events->Branch("energy",energy,"energy[mult]/F");
+    Events->Branch("time",time,"time[mult]/F");
     Events->Branch("ieta",ieta,"ieta[mult]/I");
     Events->Branch("iphi",iphi,"iphi[mult]/I");
-    Events->Branch("eta",eta,"eta[mult]/F");
-    Events->Branch("phi",phi,"phi[mult]/F");
-    Events->Branch("energy",energy,"energy[mult]/F");
+    //Events->Branch("eta",eta,"eta[mult]/F");
+    //Events->Branch("phi",phi,"phi[mult]/F");
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
