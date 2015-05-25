@@ -62,6 +62,7 @@ class TrackAnalyzer : public edm::EDAnalyzer {
 
       edm::InputTag tracks_;
       edm::InputTag vertices_;
+      bool lightweight_;
 
       TTree* Events;
 
@@ -71,11 +72,23 @@ class TrackAnalyzer : public edm::EDAnalyzer {
       float pt[Max];
       float eta[Max];
       float phi[Max];
-
-      int vtxmult;
+      int charge[Max];
       float vx[Max];
       float vy[Max];
       float vz[Max];
+      float normalizedChi2[Max];
+      float dxy[Max];
+      float dz[Max];
+      float ptError[Max];
+      float dxyError[Max];
+      float dzError[Max];
+      int numberOfValidHits[Max];
+      int highPurity[Max];
+
+      int vtxmult;
+      float vtxX[Max];
+      float vtxY[Max];
+      float vtxZ[Max];
 
 };
 
@@ -96,6 +109,7 @@ TrackAnalyzer::TrackAnalyzer(const edm::ParameterSet& iConfig)
    //now do what ever initialization is needed
    tracks_ = iConfig.getParameter<edm::InputTag> ("tracks");
    vertices_ = iConfig.getParameter<edm::InputTag> ("vertices");
+   lightweight_ = iConfig.getParameter<bool> ("lightweight");
 }
 
 
@@ -134,6 +148,18 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      pt[trkmult] = p.pt();
      eta[trkmult] = p.eta();
      phi[trkmult] = p.phi();
+     charge[trkmult] = p.charge();
+     vx[trkmult] = p.vx();
+     vy[trkmult] = p.vy();
+     vz[trkmult] = p.vz();
+     normalizedChi2[trkmult] = p.normalizedChi2();
+     dxy[trkmult] = p.dxy();
+     dz[trkmult] = p.dz();
+     ptError[trkmult] = p.ptError();
+     dxyError[trkmult] = p.dxyError();
+     dzError[trkmult] = p.dzError();
+     numberOfValidHits[trkmult] = p.numberOfValidHits();
+     highPurity[trkmult] = p.quality(reco::TrackBase::qualityByName("highPurity"));
 
      trkmult++;
 
@@ -147,9 +173,9 @@ TrackAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    for(reco::VertexCollection::const_iterator vertex = recVertices->begin(); vertex!= recVertices->end(); vertex++) {
 
-     vx[vtxmult] = vertex->position().x();
-     vy[vtxmult] = vertex->position().y();
-     vz[vtxmult] = vertex->position().z();
+     vtxX[vtxmult] = vertex->position().x();
+     vtxY[vtxmult] = vertex->position().y();
+     vtxZ[vtxmult] = vertex->position().z();
 
      vtxmult++;
 
@@ -175,11 +201,29 @@ TrackAnalyzer::beginJob()
    Events->Branch("pt",pt,"pt[trkmult]/F");
    Events->Branch("eta",eta,"eta[trkmult]/F");
    Events->Branch("phi",phi,"phi[trkmult]/F");
+   Events->Branch("charge",charge,"charge[trkmult]/I");
+
+   if(!lightweight_) {
+
+   Events->Branch("vx",vx,"vx[trkmult]/F");
+   Events->Branch("vy",vy,"vy[trkmult]/F");
+   Events->Branch("vz",vz,"vz[trkmult]/F");
+
+   Events->Branch("normalizedChi2",normalizedChi2,"normalizedChi2[trkmult]/F");
+   Events->Branch("dxy",dxy,"dxy[trkmult]/F");
+   Events->Branch("dz",dz,"dz[trkmult]/F");
+   Events->Branch("ptError",ptError,"ptError[trkmult]/F");
+   Events->Branch("dxyError",dxyError,"dxyError[trkmult]/F");
+   Events->Branch("dzError",dzError,"dzError[trkmult]/F");
+   Events->Branch("nValidHits",numberOfValidHits,"numberOfValidHits[trkmult]/I");
+   Events->Branch("highPurity",highPurity,"highPurity[trkmult]/I");
 
    Events->Branch("vtxmult",&vtxmult,"vtxmult/I");
-   Events->Branch("vx",vx,"vx[vtxmult]/F");
-   Events->Branch("vy",vy,"vy[vtxmult]/F");
-   Events->Branch("vz",vz,"vz[vtxmult]/F");
+   Events->Branch("vtxX",vtxX,"vtxX[vtxmult]/F");
+   Events->Branch("vtxY",vtxY,"vtxY[vtxmult]/F");
+   Events->Branch("vtxZ",vtxZ,"vtxZ[vtxmult]/F");
+
+   }
 
 }
 
